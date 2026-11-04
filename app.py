@@ -27,8 +27,8 @@ REGIONS = ["eu-west-3", "eu-central-1", "eu-west-1", "eu-west-2", "eu-north-1",
 
 @st.cache_resource(show_spinner="Connexion à Supabase…")
 def get_engine():
-cfg = st.secrets["supabase"]
-ref, pwd = cfg["project_ref"].strip(), quote_plus(cfg["password"])
+    cfg = st.secrets["supabase"]
+    ref, pwd = cfg["project_ref"].strip(), quote_plus(cfg["password"])
     if "host" in cfg:
         hosts = [cfg["host"]]
     else:  # Session pooler (IPv4) : on teste les régions jusqu'à trouver la bonne
