@@ -11,6 +11,13 @@ import plotly.express as px
 import streamlit as st
 
 st.set_page_config(page_title="Trafic aérien NYC", page_icon="✈️", layout="wide")
+import time as _time
+_T0 = _time.time()
+
+def log(msg):
+    print(f"[debug {_time.time() - _T0:6.1f}s] {msg}", flush=True)
+
+log("démarrage du script")
 
 # --------------------------------------------------------------------------
 # Connexion : .streamlit/secrets.toml doit contenir
@@ -35,6 +42,7 @@ def get_engine():
         hosts = [f"{p}-{r}.pooler.supabase.com" for p in ("aws-0", "aws-1") for r in REGIONS]
     last_err = None
     for host in hosts:
+        log(f"connexion à {host}...")
         engine = create_engine(
             f"postgresql+psycopg2://postgres.{ref}:{pwd}@{host}:5432/postgres",
             connect_args={"sslmode": "require", "connect_timeout": 5},
@@ -43,9 +51,11 @@ def get_engine():
         try:
             with engine.connect() as c:
                 c.execute(text("SELECT 1"))
+            log("connexion OK")
             return engine, host
         except Exception as e:
             last_err = e
+            log(f"échec connexion : {e}")
             engine.dispose()
             if "password authentication failed" in str(e):
                 break  # bonne région mais mauvais mot de passe : inutile de continuer
@@ -58,8 +68,11 @@ engine, HOST = get_engine()
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def _run(sql: str, params: dict) -> pd.DataFrame:
+    log("requête : " + " ".join(sql.split())[:80])
     with engine.connect() as c:
-        return pd.read_sql(text(sql), c, params=params)
+        df = pd.read_sql(text(sql), c, params=params)
+    log(f"  -> {len(df)} lignes")
+    return df
 
 
 def q(sql: str, **params) -> pd.DataFrame:
